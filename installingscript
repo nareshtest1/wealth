@@ -1,0 +1,93 @@
+#!/bin/bash
+
+#Title		:	For installing Softwares
+#Description	:	This will help you for installing Softwares
+#Author		:	Naresh M
+#Date		:	241218
+#Version	:	1.0
+
+set -x
+Usage(){
+echo "Usage ${0} -f filename "
+echo "-f	to install required packages from file"
+exit 1
+}
+
+#Making Sure User should execute with root
+if [[ $(id -un) != root ]]
+then
+echo "Please Run as Root"
+exit 1
+fi
+
+
+#Checking for present working Dir
+if [[ $(pwd)  != "/opt" ]]
+then
+cd /opt
+fi
+
+
+while getopts f: options
+do
+ if [[ ${#} -eq 0 ]]
+ then 
+ Usage
+ exit 1
+ fi
+
+	case ${options} in
+	f)filename=${OPTARG};;
+	*)Usage;; 
+	esac
+done
+
+shift $(( OPTIND - 1 ))
+
+#check User passed file name correct
+
+if [[ -f ${filename} ]]
+then 
+echo "Your requested for below installation"
+set +x
+cat $filename
+ for i in $(cat ${filename})
+ do
+  #Assigning Varibale 
+  check=$(yum list $i |grep  Installed -A1 |grep -v Installed |awk '{print $1}')
+
+   if [[ -z  $check ]]
+   then
+   yum list $i 1>&2 /dev/null
+     if [[ $? -ne 0 ]]
+     then 
+     echo "Package $i Not avaialble Need to be downloaded"
+     echo "Please enter url if you want to specify options please use quotes"
+     read -p "Please enter Url: " Url
+     echo $Url
+     wget $Url
+
+if [[  $? -ne 0 ]]
+then
+echo "Please check internet connectivity" 
+fi
+     exit 1	
+     fi
+   
+   yum install $i
+   else
+   echo $i > /var/tmp/check
+   fi
+done
+echo "These are already Installed"
+
+cat /var/tmp/check
+else 
+echo "File Not exists"
+exit 1
+fi
+
+
+
+
+
